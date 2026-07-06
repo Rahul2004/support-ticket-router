@@ -1,0 +1,42 @@
+[0:00 — HOOK]
+In customer support, agents spend hours classifying tickets and looking up customer SLAs, which can delay replies. But exposing raw ticket text to AI models can leak customer private details or invite prompt injection attacks. (pause) Today, I am showing a solution that makes this process automated, SLA-aware, and completely secure.
+
+[0:20 — WHAT IT IS]
+Our project is the Secure Support Ticket Router, developed for the Agents for Business track. It is a multi-agent workflow that classifies tickets, redacts private info, matches customer tiers, and drafts replies while keeping a human in the loop.
+
+[0:40 — SHOW THE BANNER]
+(show assets/cover_page_banner.png)
+As you can see on the screen, this is our project banner. Support Ticket Router is designed to be secure, automated, and SLA-aware.
+
+[1:00 — ARCHITECTURE]
+(show assets/architecture_diagram.png)
+Let's walk through the architecture diagram to see how it works.
+First, the workflow starts and enters the security checkpoint node, which redacts emails or phones and scans for prompt injection.
+If a security threat is found, it routes to the security failure handler and blocks execution.
+If clean, it routes to the orchestrator agent, which coordinates the classification and response drafting.
+The orchestrator delegates work to the ticket_classifier agent to analyze category and sentiment, and the response_drafter agent to write a reply.
+Both sub-agents use our stdio MCP server to access ticket history, customer tiers, and knowledge base articles.
+Next, the draft response goes to the human review node, where it pauses for human approval.
+Finally, once approved, the workflow sends the clean output and logs the security audit history.
+
+[2:00 — LIVE DEMO]
+(switch to playground at localhost:18081) (pause)
+Now, let's see a live demo of the agent running in the ADK Playground.
+For our first test case, we will send a clean ticket from a gold tier customer reporting a slow client load issue.
+As we run it, the security checkpoint scans it, passes it, and routes to the orchestrator.
+The orchestrator calls the classifier, which checks our MCP tool and determines a gold tier means a 4-hour SLA.
+The response drafter then uses the MCP knowledge base to get client troubleshooting tips.
+The workflow now pauses at the human review node. (pause)
+I can review the draft response, type "yes" in the prompt, and hit send.
+The workflow finishes with status APPROVED and logs the audit trail. (pause)
+Our second test case is PII Redaction. Let's send a ticket containing a customer email and phone number.
+In the trace, you can see the security checkpoint immediately scrubs the sensitive text, substituting it with EMAIL_REDACTED and PHONE_REDACTED tags, protecting customer privacy.
+Our third test case is the injection block. Let's try a prompt injection asking the model to ignore rules.
+The security checkpoint catches the system override keyword, triggers a CRITICAL alert, and blocks the agent run immediately, returning status REJECTED_OR_BLOCKED.
+
+[3:00 — SECURITY & MCP]
+This secure flow is powered by our security checkpoint node, which handles regex PII scrubbing, injection keyword blocks, and logs structured JSON logs.
+Our stdio MCP server runs locally to safely provide historical ticket lookup, SLA status, and KB article indexing without exposing DB credentials.
+
+[3:30 — IMPACT / CLOSE]
+By automating classification and drafting with built-in safety controls, this agent saves agents hours of work, protects brand reputation, and speeds up customer help. Thank you!
